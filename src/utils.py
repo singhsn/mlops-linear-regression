@@ -32,13 +32,14 @@ def calculate_loss(y_true, y_pred):
 #Quantize weights to specified bit precision
 def quantize_weights(weights, bits=8):
 
-    # Calculate scale and zero point
-    w_min, w_max = weights.min(), weights.max()
+    w_max = np.max(np.abs(weights))
     qmin, qmax = 0, (2 ** bits) - 1
     
-    scale = (w_max - w_min) / (qmax - qmin)
-    zero_point = qmin - w_min / scale
-    zero_point = np.clip(np.round(zero_point), qmin, qmax).astype(np.uint8)
+    scale = (2 * w_max) / (qmax - qmin)
+    zero_point = (qmax + qmin) // 2
+
+    if scale == 0:
+        scale = 1.0
     
     # Quantize
     quantized = np.clip(np.round(weights / scale + zero_point), qmin, qmax).astype(np.uint8)
